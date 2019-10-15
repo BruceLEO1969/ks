@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM golang:alpine
 COPY hellotalk /usr/bin/hellotalk
 
 EXPOSE 8080
