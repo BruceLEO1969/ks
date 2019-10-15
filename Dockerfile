@@ -1,6 +1,6 @@
 FROM alpine:latest
 RUN apk add --no-cache vim curl
-COPY hellotalk /usr/bin/
+COPY hellotalk /usr/bin/hellotalk
 
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT ["/usr/bin/hellotalk"]
