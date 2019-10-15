@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.9
 RUN apk add --no-cache vim curl
 COPY hellotalk /usr/bin/hellotalk
 
