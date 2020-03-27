@@ -19,7 +19,8 @@ pipeline {
       }
     }
       steps {
-          echo 'ok'
+        echo 'ok'
+        echo changelog
       }
     }
   }
