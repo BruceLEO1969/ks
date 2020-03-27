@@ -20,7 +20,7 @@ pipeline {
         //build()
         echo "Dev branch - Build"
         // sh 'bundle install'
-        // sh 'bundle update'
+        sh 'bundle update --bundler'
         sh 'bundle exec fastlane build'
       }
     }
