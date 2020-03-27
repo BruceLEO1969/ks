@@ -8,11 +8,19 @@ pipeline {
       }
     }
     stage("Changelog") {
-        def changelogString = gitChangelog returnType: 'STRING',
-        from: [type: 'REF', value: MR_TO_BRANCH],
-        to: [type: 'REF', value: MR_FROM_BRANCH],
-        template: getChangelogTemplateString(params)
-        currentBuild.description = changelogString
+    //    def changelogString = gitChangelog returnType: 'STRING',
+    //    from: [type: 'REF', value: MR_TO_BRANCH],
+    //    to: [type: 'REF', value: MR_FROM_BRANCH],
+    //    template: getChangelogTemplateString(params)
+    //    currentBuild.description = changelogString
+    when {
+      not {
+      changelog '.*^\\[ci skip\\] .+$'
+      }
+      steps {
+          echo 'ok'
+      }
     }
   }
+}
 }
