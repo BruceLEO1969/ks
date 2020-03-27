@@ -1,0 +1,321 @@
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+before_all do |lane, options|
+  ENV["GIT_BRANCH"] = git_branch
+  ENV['VERSIONNAME'] ||= get_version_name().tr(",","")
+  ENV['VERSIONCODE'] ||= get_version_code().tr(",","")
+  log_raw = read_changelog(
+    changelog_path: './CHANGELOG.md',
+    section_identifier: '[released]',
+    excluded_markdown_elements: ['-', '###']
+  )
+
+  ENV['log_raw'] = log_raw
+
+  markdown = []
+  if log_raw != nil
+    log_arr = log_raw.split("\n")
+    for item in log_arr do
+      item_strip = item.strip
+      if item_strip.length > 0
+        text = item_strip.match(/^>.*\[.*\]\(.*\)/)
+        markdown.push("#{text}")
+      end
+    end
+    markdown = markdown.join("\n")
+    puts markdown
+  end
+
+  ENV['CHANGELOG'] = ENV['log_raw']
+
+  ENV['PHONE'] = read_changelog(
+    changelog_path: './CHANGELOG.md',
+    section_identifier: '[Phone]',
+    excluded_markdown_elements: ['-', '###']
+  )
+
+  # "1" means do not upload and group notify.
+  ENV['TRIGER'] = read_changelog(
+    changelog_path: './CHANGELOG.md',
+    section_identifier: '[Triger]',
+    excluded_markdown_elements: ['-', '###']
+  )
+
+  # "1" means compile htprivate.
+  ENV['HTFLAVOR'] = read_changelog(
+    changelog_path: './CHANGELOG.md',
+    section_identifier: '[HtFlavor]',
+    excluded_markdown_elements: ['-', '###']
+  )
+
+  ENV['DevOps'] = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=1c748054-6d2a-43b4-b8f8-b0ea3b564967'
+  ENV['Android_ALL'] = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=07b1fe20-a3e6-47e9-95e9-c381c967d703'
+
+  phone_list = "18779144521,18126009603"
+  ENV['PHONE'] = phone_list + "," + ENV['PHONE']
+
+  #wechatwork(
+  #  webhook: ENV['DevOps'],
+  #  markdown: "**#{ENV['VERSIONNAME']} (#{ENV['VERSIONCODE']}) BUILD START** \r\n\n  #{ENV['CHANGELOG']}",
+  #  mentioned_mobile_list: []
+  #)
+end
+
+
+before_each do |lane, options|
+  # ...
+end
+
+
+
+
+desc "build"
+lane :build do |options|
+  begin
+    go build #{ENV['log_raw']}
+  rescue => e
+    puts e
+    UI.error e
+    UI.user_error!("Whoops, something went wrong")
+  end
+end
+
+
+
+
+
+
+desc "Change jira issue."
+lane :do_jira_issue do |options|
+  jirastatus(
+    log: ENV['log_raw']
+  )
+  wechatwork(
+    webhook: ENV['DevOps'],
+    markdown: "Change jira issue <font color=\"info\">success</font>.",
+    mentioned_mobile_list: []
+  )
+end
+
+desc "wechatwork notification send to all whel all step success."
+lane :do_wechat_all do |options|
+  wechatwork(
+    webhook: ENV['Android_ALL'],
+    markdown: "**Android #{ENV['VERSIONNAME']} (#{ENV['VERSIONCODE']})** \r\n\n  #{ENV['CHANGELOG']}",
+    mentioned_mobile_list: ENV['PHONE']
+  )
+end
+
+desc "Submit a new Release Build to all"
+lane :do_publish_all do |options|
+  do_publish_china
+  do_publish_google
+  
+  if "1" == ENV['HTFLAVOR']
+    do_publish_htprivate
+  end
+
+  do_jira_issue
+  
+  if "1" != ENV['TRIGER']
+    do_wechat_all
+  end
+end
+
+desc "Compile China flavor."
+lane :do_compile_china do |options|
+  begin
+    gradle(
+      task: "assemble",
+      flavor: "China",
+      build_type: "Release",
+      print_command_output: false
+      )
+    wechatwork(
+     webhook: ENV['DevOps'],
+     markdown: "Gradle task for China <font color=\"info\">success</font>.",
+     mentioned_mobile_list: []
+     )
+  rescue => e
+    wechatwork(
+     webhook: ENV['DevOps'],
+     markdown: "Gradle task for China <font color=\"warning\">failed</font>.",
+     mentioned_mobile_list: []
+     )
+    puts e
+    UI.error e
+    UI.user_error!("Whoops, something went wrong")
+  end
+end
+
+desc "Compile Google flavor."
+lane :do_compile_google do |options|
+  begin
+    gradle(
+      task: "assemble",
+      flavor: "Google",
+      build_type: "Release",
+      print_command_output: false
+      )
+    wechatwork(
+     webhook: ENV['DevOps'],
+     markdown: "Gradle task for Google <font color=\"info\">success</font>.",
+     mentioned_mobile_list: []
+     )
+  rescue Exception => e
+    wechatwork(
+     webhook: ENV['DevOps'],
+     markdown: "Gradle task for Google <font color=\"warning\">failed</font>.",
+     mentioned_mobile_list: []
+     )
+    puts e
+    UI.error e
+    UI.user_error!("Whoops, something went wrong")
+  end
+end
+
+desc "Compile htprivate flavor."
+lane :do_compile_htprivate do |options|
+  begin
+    gradle(
+      task: "assemble",
+      flavor: "Htprivate",
+      build_type: "Release",
+      print_command_output: false
+      )
+    wechatwork(
+     webhook: ENV['DevOps'],
+     markdown: "Gradle task for Private <font color=\"info\">success</font>.",
+     mentioned_mobile_list: []
+     )
+  rescue Exception => e
+    wechatwork(
+     webhook: ENV['DevOps'],
+     markdown: "Gradle task for Private <font color=\"warning\">failed</font>.",
+     mentioned_mobile_list: []
+     )
+    puts e
+    UI.error e
+    UI.user_error!("Whoops, something went wrong")
+  end
+end
+
+desc "Submit a new Release Build to China"
+lane :do_publish_china do |options|
+  #gradle(
+  #  task: "assemble",
+  #  flavor: "China",
+  #  build_type: "Release",
+  #  print_command_output: false
+  #  )
+  do_compile_china
+  if "1" != ENV['TRIGER']
+    do_upload_firim
+  end
+end
+
+desc "Submit a new Release Build to Google"
+lane :do_publish_google do |options|
+  #gradle(
+  #  task: "assemble",
+  #  flavor: "Google",
+  #  build_type: "Release",
+  #  print_command_output: false
+  #)
+  do_compile_google
+  if "1" != ENV['TRIGER']
+    do_upload_firim
+  end
+end
+
+desc "Submit a new Release Build to htprivate"
+lane :do_publish_htprivate do |options|
+  #gradle(
+  #  task: "assemble",
+  #  flavor: "Htprivate",
+  #  build_type: "Release",
+  #  print_command_output: false
+  #)
+  do_compile_htprivate
+  if "1" != ENV['TRIGER']
+    do_upload_firim
+  end
+end
+
+$upload_retry=0
+
+lane :do_upload_firim do
+  puts lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]
+  puts lane_context[SharedValues::GRADLE_ALL_APK_OUTPUT_PATHS]
+  puts lane_context[SharedValues::GRADLE_FLAVOR]
+  puts lane_context[SharedValues::GRADLE_BUILD_TYPE]
+  puts get_version_name().tr(",","")
+  puts get_version_code().tr(",","")
+  begin
+    flavor = lane_context[SharedValues::GRADLE_FLAVOR] || /([^\/-]*)(?=-[^\/-]*\.apk$)/.match(apk)
+    # if flavor == "China"
+    #   lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] = "/Users/mac/Library/Jenkins-slave1/workspace/test_dev/HelloTalk/build/outputs/apk/china/release/HelloTalk-china-release.apk"
+    # elsif flavor == "Google"
+    #   lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] = "/Users/mac/Library/Jenkins-slave1/workspace/test_dev/HelloTalk/build/outputs/apk/google/release/HelloTalk-google-release.apk"
+    # else
+    #   UI.user_error!("No flavor defined.")      
+    # end
+
+    puts lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]
+    wechatwork(
+      webhook: ENV['DevOps'],
+      markdown: "#{flavor} app uploading.",
+      mentioned_mobile_list: []
+    )
+    change_log = "[#{flavor}]+[#{ENV['GIT_BRANCH']}]\r\n---\r\n" + ENV['CHANGELOG']
+    firim(
+      apk: lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
+      app_version: get_version_name().tr(",",""),
+      app_build_version: get_version_code().tr(",",""),
+      app_changelog: change_log
+    )
+    wechatwork(
+      webhook: ENV['DevOps'],
+      markdown: "#{flavor} app upload <font color=\"info\">success</font>.",
+      mentioned_mobile_list: []
+    )
+
+    $upload_retry=0
+  rescue => ex
+    $upload_retry += 1
+    if $upload_retry < 3
+      do_upload_firim
+    else
+      wechatwork(
+        webhook: ENV['DevOps'],
+        markdown: "#{flavor} upload <font color=\"warning\">failed</font>.",
+        mentioned_mobile_list: []
+      )
+
+      # raise ex
+      UI.error e
+      UI.user_error!("Whoops, something went wrong")
+      puts ex
+    end
+  end
+end
+
+after_each do |lane, options|
+  # ...
+end
+
+after_all do |lane, options|
+  wechatwork(
+    webhook: ENV['DevOps'],
+    markdown: "**Android #{ENV['VERSIONNAME']} (#{ENV['VERSIONCODE']}) BUILD Ended** \r\n\n  #{ENV['CHANGELOG']}",
+    mentioned_mobile_list: []
+  )
+end
+
+error do |lane, exception, options|
+  if options[:debug]
+    puts "Hi :)"
+  end
+  UI.message(exception.message)
+end
