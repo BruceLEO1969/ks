@@ -14,7 +14,7 @@ pipeline {
       }
     }
       steps {
-        build
+        build()
       }
     }
   }
