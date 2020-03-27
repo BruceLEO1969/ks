@@ -14,7 +14,11 @@ pipeline {
       }
     }
       steps {
-        build()
+        //build()
+        echo "Dev branch - Build"
+        sh 'bundle install'
+        sh 'bundle update'
+        sh 'bundle exec fastlane build'
       }
     }
   }
