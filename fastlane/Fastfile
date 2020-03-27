@@ -3,8 +3,8 @@
 
 before_all do |lane, options|
   ENV["GIT_BRANCH"] = git_branch
-#  ENV['VERSIONNAME'] ||= get_version_name().tr(",","")
-#  ENV['VERSIONCODE'] ||= get_version_code().tr(",","")
+  ENV['VERSIONNAME'] ||= get_version_name().tr(",","")
+  ENV['VERSIONCODE'] ||= get_version_code().tr(",","")
   log_raw = read_changelog(
     changelog_path: './CHANGELOG.md',
     section_identifier: '[released]',
