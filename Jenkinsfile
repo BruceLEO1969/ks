@@ -15,12 +15,12 @@ pipeline {
     //    currentBuild.description = changelogString
     when {
       not {
-      changelog '.*^\\[ci skip\\] .+$'
+        changelog '.*^\\[ci skip\\] .+$'
       }
+    }
       steps {
           echo 'ok'
       }
     }
   }
-}
 }
