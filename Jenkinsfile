@@ -1,27 +1,29 @@
 pipeline {
   agent any
   stages {
-    stage('sayhi') {
+    stage('Checkout SCM') {
       steps {
         git(changelog: true, url: 'https://github.com/BruceLEO1969/ks.git', branch: 'master', poll: true)
-        echo 'Fuck it again...'
+        echo 'Git checkout...'
       }
     }
-    stage("Changelog") {
-    //    def changelogString = gitChangelog returnType: 'STRING',
-    //    from: [type: 'REF', value: MR_TO_BRANCH],
-    //    to: [type: 'REF', value: MR_FROM_BRANCH],
-    //    template: getChangelogTemplateString(params)
-    //    currentBuild.description = changelogString
+    stage("Build") {
     when {
       not {
         changelog '.*^\\[ci skip\\] .+$'
       }
     }
       steps {
-        echo 'ok'
-        echo ${changelog}
+        build
       }
     }
   }
+}
+
+
+def build() {
+    echo "Dev branch - Build"
+    sh 'bundle install'
+    sh 'bundle update'
+    sh 'bundle exec fastlane'
 }
