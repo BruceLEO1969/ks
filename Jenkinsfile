@@ -8,11 +8,14 @@ pipeline {
       }
     }
     stage("Build") {
-    when {
-      not {
-        changelog '.*^\\[ci skip\\] .+$'
+      when {
+        not {
+          changelog '.*^\\[ci skip\\] .+$'
+        }
       }
-    }
+      environment {
+          PATH = "${PATH}:/var/lib/jenkins/.gem/ruby/2.7.0/bin"
+      }
       steps {
         //build()
         echo "Dev branch - Build"
