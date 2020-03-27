@@ -20,7 +20,7 @@ pipeline {
     }
       steps {
         echo 'ok'
-        echo changelog
+        echo ${changelog}
       }
     }
   }
