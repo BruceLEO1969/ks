@@ -1,5 +1,22 @@
 pipeline {
   agent any
+  options {
+      skipDefaultCheckout()
+      ansiColor('xterm')
+      retry(1)
+  }
+
+  triggers {
+            pollSCM('H * * * *')
+  }
+
+  environment {
+      LANG = "C.UTF-8"
+      LC_ALL = "en_US.UTF-8"
+      LANGUAGE = "en_US.UTF-8"
+      UNITTESTING_STATE = 'false'
+      TESTING_STATE = 'false'
+  }
   stages {
     stage('Checkout SCM') {
       steps {
