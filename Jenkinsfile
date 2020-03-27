@@ -36,8 +36,8 @@ pipeline {
       steps {
         //build()
         echo "Dev branch - Build"
-        // sh 'bundle install'
         sh 'bundle update --bundler'
+        sh 'bundle install'
         sh 'bundle exec fastlane build'
       }
     }
