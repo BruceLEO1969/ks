@@ -1,4 +1,4 @@
-##[release] hellotalk
+##[release] hellotalk hello talk talk to me
 
 ##[Phone]
 
